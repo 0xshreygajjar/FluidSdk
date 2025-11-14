@@ -1,4 +1,3 @@
-
 import { ethers } from "ethers";
 import * as dotenv from "dotenv";
 import { FluidSDK } from "../src/index.js";
@@ -174,10 +173,6 @@ async function queryFeedbackFromSubgraph(
  */
 const main = async () => {
   try {
-
-
-    
-
     console.log("=".repeat(70));
     console.log(
       "🚀 FluidSDK Full Flow Test - MCP Integration + Subgraph Verification"
@@ -195,7 +190,7 @@ const main = async () => {
     const RPC_URL = process.env.RPC_URL;
     const PRIVATE_KEY = process.env.PRIVATE_KEY;
     const FEEDBACK_PRIVATE_KEY = process.env.FEEDBACK_PRIVATE_KEY; // Second wallet for feedback
-    const CHAIN_ID = parseInt(process.env.CHAIN_ID || "11155111");
+    const CHAIN_ID = parseInt(process.env.CHAIN_ID || "84532");
     const PINATA_JWT = process.env.PINATA_JWT;
 
     if (!RPC_URL) {
@@ -268,12 +263,11 @@ const main = async () => {
     const sdk = new FluidSDK(sdkConfig);
     console.log("✅ SDK initialized");
 
-    
-    const data = await queryAgentFromSubgraph(sdk, "11155111:1655");
+    // const data = await queryAgentFromSubgraph(sdk, "84532:1668");
 
-    console.log({
-      data
-    });
+    // console.log({
+    //   data,
+    // });
 
     // Wait for chain initialization
     const chainId = await sdk.chainId();
@@ -331,22 +325,68 @@ const main = async () => {
 
     const agentName = `MCP FOR CRYPTO WORLD`;
     const agentDescription = "Wake Up To Crypto World Daily";
-    const agentImage = "https://images.unsplash.com/photo-1635776062360-af423602aff3?q=80&w=1332&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
+    const agentImage =
+      "https://images.unsplash.com/photo-1635776062360-af423602aff3?q=80&w=1332&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
 
     const agent = sdk.createAgent({
       name: agentName,
       description: agentDescription,
       image: agentImage,
       x402support: true,
-      metadata: { createdBy: "0XMan", Builded:"Community", xcom:"https://x.com/0XMan"},
+      metadata: {
+        createdBy: "0XMan",
+        Builded: "Community",
+        xcom: "https://x.com/0XMan",
+      },
       active: true,
       owners: [signer.address as `0x${string}`],
     });
 
-   await agent.setMCP(MCP_SERVER_URL, MCP_PROTOCOL_VERSION, true);
-      
+    const tools = await fetch(`${MCP_SERVER_URL}/tools`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }).then((res) => res.json());
 
-  
+    const resources = await fetch(`${MCP_SERVER_URL}/resources`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }).then((res) => res.json());
+    const prompts = await fetch(`${MCP_SERVER_URL}/prompts`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }).then((res) => res.json());
+
+    await agent.setMCP(MCP_SERVER_URL, MCP_PROTOCOL_VERSION, true);
+
+    if (tools.length > 0 || prompts.length > 0 || resources.length > 0) {
+
+      console.log("\n📝 Adding MCP capabilities to agent...");
+      const toolNames = tools.map((item:any) => item.name);
+      const promptNames = prompts.map((item:any) => item.name);
+      const resourceNames = resources.map((item:any) =>  JSON.stringify(item));
+
+      agent.setMcpCapabilities(toolNames, promptNames, resourceNames);
+
+      console.log("✅ MCP capabilities added:");
+      console.log(`   Tools: ${tools.length} - ${toolNames.join(", ")}`);
+      console.log(`   Prompts: ${prompts.length} - ${promptNames.join(", ")}`);
+      console.log(
+        `   Resources: ${resources.length} - ${resources.join(", ")}`
+      );
+    }
+
+    agent.setAgentWallet(
+      "0x4b5e1da2957a43aec40224959642ea58c930ba47",
+      84532
+    );
+
+    // await queryFeedbackFromSubgraph(sdk, "84532:1668");
 
     // Step 5: Register Agent On-Chain
     console.log("\n" + "=".repeat(70));
@@ -525,8 +565,7 @@ const main = async () => {
         const feedback = await sdk.giveFeedback(
           newAgentId,
           feedbackFile,
-          undefined,
-          
+          undefined
         );
 
         console.log("✅ Feedback submitted!");

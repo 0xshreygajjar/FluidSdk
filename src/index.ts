@@ -229,10 +229,6 @@ export class FluidSDK {
    * Create a new agent (off-chain object in memory)
    */
   createAgent({name, description, image, x402support, metadata, active, owners}: {name: string, description: string, image?: URI, x402support?: boolean, metadata: Record<string, any>, active?: boolean, owners:`0x${string}`[], trustModels?: string[]}): Agent {
-
-    console.log({name, description, image, x402support, metadata, active, owners});
-    
-
     const registrationFile: RegistrationFile = {
       name,
       description,
