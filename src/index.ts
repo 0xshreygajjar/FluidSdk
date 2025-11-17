@@ -1,5 +1,6 @@
 
 import { ethers } from 'ethers';
+import type {Signer} from "x402-axios";
 import { Web3Client } from './helpers/web3client.js';
 import { IPFSClient, type IPFSClientConfig } from './helpers/ipfsClient.js';
 import { SubgraphClient } from './helpers/subgraphclient.js';
@@ -13,6 +14,7 @@ import { formatAgentId, parseAgentId } from './utils/id-format.js';
 import { IPFS_GATEWAYS, TIMEOUTS } from './utils/constants.js';
 import { EndpointType, type TrustModel } from './types/enum.js';
 import { Agent } from './helpers/agent.js';
+import { ExecuteTask } from './helpers/execution.js';
 
 export interface SDKConfig {
   chainId: number;
@@ -31,6 +33,7 @@ export class FluidSDK {
   private _ipfsClient?: IPFSClient;
   private _subgraphClient?: SubgraphClient;
   private readonly _feedbackManager: FeedbackManager;
+  private readonly _execution: ExecuteTask;
   private readonly _indexer: AgentIndexer;
   private _identityRegistry?: ethers.Contract;
   private _reputationRegistry?: ethers.Contract;
@@ -73,6 +76,7 @@ export class FluidSDK {
     // Initialize indexer
     this._indexer = new AgentIndexer(this._web3Client, this._subgraphClient, this._subgraphUrls);
 
+    this._execution = new ExecuteTask();
     // Initialize IPFS client
     if (config.ipfs) {
       this._ipfsClient = this._initializeIpfsClient(config);
@@ -235,6 +239,30 @@ export class FluidSDK {
     };
     
     return Agent.getInstance(this, registrationFile);
+  }
+
+  async executeAgentTask({
+      agentEndpoint,
+      mcpServerUrl,
+      parameters,
+      signer,
+    }: {
+      agentEndpoint: string;
+      mcpServerUrl: string;
+      parameters: Record<string, any>;
+      signer: Signer;
+    }){
+    const execute = await this._execution.executeAgentTask({
+      agentEndpoint,
+      mcpServerUrl,
+      parameters,
+      signer,
+    }) 
+
+
+
+
+    return execute;
   }
 
   /**
@@ -865,4 +893,9 @@ export class FluidSDK {
   }
 
 }
+
+// Export ExecuteTask, Signer type, and feedback types for standalone usage
+export { ExecuteTask } from './helpers/execution.js';
+export type { Signer } from 'x402-axios';
+export type { FeedbackParams, ContractConfig } from './helpers/execution.js';
 

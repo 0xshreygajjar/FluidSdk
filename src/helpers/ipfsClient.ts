@@ -225,11 +225,17 @@ export class IPFSClient {
     // Build ERC-8004 compliant registration file
     const data = {
       creatorAddress: registrationFile.walletAddress,
-      tools: tools,
       type: "agent",
+      ...(registrationFile.image && { image: registrationFile.image }),
+      endpoints,
+      ...(registrations.length > 0 && { registrations }),
+      ...(registrationFile.trustModels.length > 0 && {
+        supportedTrusts: registrationFile.trustModels,
+      }),
       name: registrationFile.name,
       description: registrationFile.description,
       active: registrationFile.active,
+      tools: tools,
       x402support: registrationFile.x402support,
     };
     
