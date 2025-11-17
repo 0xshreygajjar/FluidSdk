@@ -4,6 +4,8 @@ import {
   type Signer,
   withPaymentInterceptor,
 } from "x402-axios";
+import { DEFAULT_REGISTRIES } from "./contracts.js";
+
 
 export interface FeedbackParams {
   agentId: string; // Format: chainId:tokenId
@@ -20,8 +22,7 @@ export interface FeedbackParams {
 }
 
 export interface ContractConfig {
-  identityRegistryAddress: string;
-  reputationRegistryAddress: string;
+  chainId: number;
   rpcUrl: string;
   pinataJwt?: string;
   pinataGateway?: string;
@@ -156,6 +157,11 @@ export class ExecuteTask {
     contractConfig: ContractConfig;
     signer: Signer;
   }) => {
+
+       const defaultRegistries = DEFAULT_REGISTRIES[contractConfig.chainId] || {};
+    if (!defaultRegistries.identityRegistryAddress || !defaultRegistries.reputationRegistryAddress) {
+      throw new Error(`No default registries found for chainId ${contractConfig.chainId}`);
+    }
     // Parse agent ID
     const agentIdParts = feedbackParams.agentId.split(':');
     if (agentIdParts.length !== 2 || !agentIdParts[0] || !agentIdParts[1]) {
@@ -185,7 +191,7 @@ export class ExecuteTask {
     ];
 
     const reputationRegistry = new ethers.Contract(
-      contractConfig.reputationRegistryAddress,
+      defaultRegistries.reputationRegistryAddress,
       reputationRegistryAbi,
       wallet
     );
@@ -208,7 +214,7 @@ export class ExecuteTask {
       feedbackParams.agentId,
       clientAddress,
       chainId,
-      contractConfig.identityRegistryAddress,
+      defaultRegistries.identityRegistryAddress,
       feedbackParams.score,
       feedbackParams.tags,
       feedbackParams.text,
@@ -227,7 +233,7 @@ export class ExecuteTask {
       clientAddress,
       feedbackIndex,
       chainId,
-      contractConfig.identityRegistryAddress,
+      defaultRegistries.identityRegistryAddress,
       wallet
     );
 
